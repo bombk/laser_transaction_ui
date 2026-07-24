@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import SystemDashboard from './pages/SystemDashboard';
 import Register from './pages/Register';
 
 function App() {
@@ -12,7 +13,15 @@ function App() {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      if (!parsedUser.role) {
+        // Clear old format user data
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setUser(null);
+      } else {
+        setUser(parsedUser);
+      }
     }
     // Mark that we have checked authentication state
     setAuthChecked(true);
@@ -61,16 +70,20 @@ function App() {
         {/* Main Content */}
         <main className="flex-1 flex flex-col">
           <Routes>
-            <Route path="/" element={<Navigate to={user ? (user.systemUser ? "/admin" : "/dashboard") : "/login"} />} />
-            <Route path="/login" element={user ? <Navigate to={user.systemUser ? "/admin" : "/dashboard"} /> : <Login setUser={setUser} />} />
-            <Route path="/register" element={user ? <Navigate to={user.systemUser ? "/admin" : "/dashboard"} /> : <Register setUser={setUser} />} />
+            <Route path="/" element={<Navigate to={user ? (user.role === 'SYSTEM_USER' ? "/system" : user.role === 'ADMIN' ? "/admin" : "/dashboard") : "/login"} />} />
+            <Route path="/login" element={user ? <Navigate to={user.role === 'SYSTEM_USER' ? "/system" : user.role === 'ADMIN' ? "/admin" : "/dashboard"} /> : <Login setUser={setUser} />} />
+            <Route path="/register" element={user ? <Navigate to={user.role === 'SYSTEM_USER' ? "/system" : user.role === 'ADMIN' ? "/admin" : "/dashboard"} /> : <Register setUser={setUser} />} />
             <Route 
               path="/dashboard" 
-              element={user && !user.systemUser ? <Dashboard user={user} /> : <Navigate to="/login" />} 
+              element={user && user.role === 'CUSTOMER' ? <Dashboard user={user} /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/admin" 
-              element={user && user.systemUser ? <AdminDashboard user={user} /> : <Navigate to="/login" />} 
+              element={user && user.role === 'ADMIN' ? <AdminDashboard user={user} /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/system" 
+              element={user && user.role === 'SYSTEM_USER' ? <SystemDashboard user={user} /> : <Navigate to="/login" />} 
             />
           </Routes>
         </main>

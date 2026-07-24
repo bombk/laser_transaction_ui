@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, Phone, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function Register({ setUser }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,7 +18,7 @@ export default function Register({ setUser }) {
     setError('');
     
     try {
-      const response = await axios.post('/api/auth/register', { name, email, password });
+      const response = await axios.post('/api/auth/register', { name, email, mobile, password });
       const { user, token } = response.data;
       
       localStorage.setItem('token', token);
@@ -80,6 +81,25 @@ export default function Register({ setUser }) {
                 required
                 className="w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-white placeholder:text-slate-500"
                 placeholder="john@example.com"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-300">Mobile Number</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Phone className="h-5 w-5 text-slate-500" />
+              </div>
+              <input 
+                type="text" 
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                required
+                pattern="[0-9]{10}"
+                title="Please enter a valid 10-digit mobile number"
+                className="w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all outline-none text-white placeholder:text-slate-500"
+                placeholder="9800000000"
               />
             </div>
           </div>

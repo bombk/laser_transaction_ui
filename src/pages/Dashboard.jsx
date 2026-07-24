@@ -90,23 +90,6 @@ export default function Dashboard({ user }) {
     fetchTransactions();
   }, [dateFilter, customStart, customEnd]);
 
-  const handleCreateAccount = async () => {
-    try {
-      await axios.post('/api/accounts', {}, { headers });
-      const res = await axios.get('/api/accounts', { headers });
-      setAccounts(res.data.accounts || []);
-      const bals = {};
-      for (const acc of res.data.accounts || []) {
-        try {
-          const balRes = await axios.get(`/api/accounts/balance/${acc._id}`, { headers });
-          bals[acc._id] = balRes.data.balance;
-        } catch { bals[acc._id] = 0; }
-      }
-      setBalances(bals);
-    } catch (err) {
-      console.error("Failed to create account", err);
-    }
-  };
 
   const handleTransfer = async (e) => {
     e.preventDefault();
@@ -161,12 +144,6 @@ export default function Dashboard({ user }) {
           <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
           <p className="text-slate-400">Manage your money seamlessly</p>
         </div>
-        <button 
-          onClick={handleCreateAccount}
-          className="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40"
-        >
-          <Plus className="h-5 w-5" /> New Account
-        </button>
       </div>
 
       {/* Total Balance Card */}
@@ -195,10 +172,7 @@ export default function Dashboard({ user }) {
             </div>
           ) : accounts.length === 0 ? (
             <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8 text-center">
-              <p className="text-slate-400 mb-4">You don't have any accounts yet.</p>
-              <button onClick={handleCreateAccount} className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                Create your first account
-              </button>
+              <p className="text-slate-400 mb-4">You don't have any accounts yet. Please contact support.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

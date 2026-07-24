@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function Login({ setUser }) {
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,7 +16,7 @@ export default function Login({ setUser }) {
     setError('');
     
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await axios.post('/api/auth/login', { login, password });
       const { user, token } = response.data;
       
       // Save token to localStorage for authenticated requests later
@@ -25,7 +25,9 @@ export default function Login({ setUser }) {
       
       setUser(user);
       
-      if (user.systemUser) {
+      if (user.role === 'SYSTEM_USER') {
+        navigate('/system');
+      } else if (user.role === 'ADMIN') {
         navigate('/admin');
       } else {
         navigate('/dashboard');
@@ -57,18 +59,18 @@ export default function Login({ setUser }) {
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300">Email Address</label>
+            <label className="text-sm font-medium text-slate-300">Email or Mobile Number</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-slate-500" />
               </div>
               <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text" 
+                value={login}
+                onChange={(e) => setLogin(e.target.value)}
                 required
                 className="w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none text-white placeholder:text-slate-500"
-                placeholder="john@example.com"
+                placeholder="john@example.com or 9800000000"
               />
             </div>
           </div>
