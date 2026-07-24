@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Shield, Zap, RefreshCw, FileDown, Filter, Clock, ArrowUpRight, ArrowDownRight, Loader2, BarChart3, Plus, User } from 'lucide-react';
+import { Shield, Zap, RefreshCw, FileDown, Filter, Clock, ArrowUpRight, ArrowDownRight, Loader2, BarChart3, Plus, User, UserPlus, Mail, Phone, Lock } from 'lucide-react';
 
 export default function SystemDashboard({ user }) {
   const [toAccount, setToAccount] = useState('');
@@ -14,17 +14,30 @@ export default function SystemDashboard({ user }) {
   const [createAccLoading, setCreateAccLoading] = useState(false);
   const [createAccMessage, setCreateAccMessage] = useState('');
 
+  // Create admin state
+  const [adminName, setAdminName] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminMobile, setAdminMobile] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminMessage, setAdminMessage] = useState('');
+
   // Transaction report state
   const [transactions, setTransactions] = useState([]);
   const [txLoading, setTxLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState('7d');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
 
   const getDateRange = useCallback(() => {
+    const formatLocal = (d) => {
+      const offset = d.getTimezoneOffset();
+      return new Date(d.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+    };
     const end = new Date();
     let start = new Date();
     switch (dateFilter) {
@@ -34,14 +47,14 @@ export default function SystemDashboard({ user }) {
       case 'all': start = new Date('2020-01-01'); break;
       case 'custom':
         return {
-          startDate: customStart || new Date('2020-01-01').toISOString().split('T')[0],
-          endDate: customEnd || new Date().toISOString().split('T')[0]
+          startDate: customStart || '2020-01-01',
+          endDate: customEnd || formatLocal(new Date())
         };
       default: start.setDate(end.getDate() - 7);
     }
     return {
-      startDate: start.toISOString().split('T')[0],
-      endDate: end.toISOString().split('T')[0]
+      startDate: formatLocal(start),
+      endDate: formatLocal(end)
     };
   }, [dateFilter, customStart, customEnd]);
 
@@ -100,6 +113,24 @@ export default function SystemDashboard({ user }) {
     }
   };
 
+  const handleCreateAdmin = async () => {
+    setAdminLoading(true);
+    setAdminMessage('');
+    try {
+      const res = await axios.post('/api/auth/create-admin',
+        { name: adminName, email: adminEmail, mobile: adminMobile, password: adminPassword },
+        { headers }
+      );
+      setAdminMessage(`Admin "${res.data.user.name}" created successfully.`);
+      setAdminName(''); setAdminEmail(''); setAdminMobile(''); setAdminPassword('');
+    } catch (err) {
+      console.error(err);
+      setAdminMessage(err.response?.data?.message || 'Failed to create admin user');
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
   const handleExportCSV = () => {
     if (transactions.length === 0) return;
     const csvRows = [
@@ -131,6 +162,14 @@ export default function SystemDashboard({ user }) {
   const completedCount = transactions.filter(tx => tx.status === 'COMPLETED').length;
   const pendingCount = transactions.filter(tx => tx.status === 'PENDING').length;
   const failedCount = transactions.filter(tx => tx.status === 'FAILED' || tx.status === 'REVERSED').length;
+
+  const filteredTransactions = transactions.filter(tx => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'completed') return tx.status === 'COMPLETED';
+    if (statusFilter === 'pending') return tx.status === 'PENDING' || tx.status === 'FAILED';
+    if (statusFilter === 'reversed') return tx.status === 'REVERSED';
+    return true;
+  });
 
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto w-full">
@@ -261,6 +300,88 @@ export default function SystemDashboard({ user }) {
           </div>
         </div>
 
+        {/* Create Admin User Card */}
+        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <UserPlus className="h-5 w-5 text-orange-500" />
+            <h2 className="text-xl font-semibold text-white">Create Admin User</h2>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Full Name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-4 w-4 text-slate-500" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Admin full name"
+                  value={adminName}
+                  onChange={(e) => setAdminName(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-white outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-4 w-4 text-slate-500" />
+                </div>
+                <input
+                  type="email"
+                  placeholder="admin@example.com"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-white outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Mobile</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-4 w-4 text-slate-500" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="10-digit mobile number"
+                  value={adminMobile}
+                  onChange={(e) => setAdminMobile(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-white outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-4 w-4 text-slate-500" />
+                </div>
+                <input
+                  type="password"
+                  placeholder="Min 6 characters"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-white outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+            </div>
+            <button
+              onClick={handleCreateAdmin}
+              disabled={adminLoading || !adminName || !adminEmail || !adminMobile || !adminPassword}
+              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 disabled:opacity-50 text-white px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20"
+            >
+              {adminLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4" /> Create Admin</>}
+            </button>
+            {adminMessage && (
+              <div className={`p-3 rounded-lg text-sm ${adminMessage.includes('successfully') ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                {adminMessage}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* System Status */}
         <div className="lg:col-span-1 bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-6 opacity-10">
@@ -335,13 +456,30 @@ export default function SystemDashboard({ user }) {
           </div>
         )}
 
+        {/* Status Filters */}
+        <div className="flex gap-2 mb-4">
+          {['all', 'completed', 'pending', 'reversed'].map(status => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                statusFilter === status 
+                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' 
+                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+              }`}
+            >
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </button>
+          ))}
+        </div>
+
         <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
           {txLoading ? (
             <div className="p-8 text-center">
               <Loader2 className="h-6 w-6 animate-spin text-indigo-400 mx-auto mb-2" />
               <p className="text-slate-400 text-sm">Loading transactions...</p>
             </div>
-          ) : transactions.length === 0 ? (
+          ) : filteredTransactions.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-slate-400 text-sm">No transactions found for this period.</p>
             </div>
@@ -359,15 +497,15 @@ export default function SystemDashboard({ user }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
-                  {transactions.map(tx => (
+                  {filteredTransactions.map(tx => (
                     <tr key={tx._id} className="hover:bg-slate-700/30 transition-colors">
                       <td className="px-4 py-3 text-slate-300 whitespace-nowrap">
                         {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                         <span className="text-slate-500 ml-1 text-xs">{new Date(tx.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                       </td>
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx._id?.slice(-8)}</td>
-                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.fromAccount?.slice(-6)}</td>
-                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.toAccount?.slice(-6)}</td>
+                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{(typeof tx.fromAccount === 'string' ? tx.fromAccount : tx.fromAccount?._id)?.slice(-6)}</td>
+                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{(typeof tx.toAccount === 'string' ? tx.toAccount : tx.toAccount?._id)?.slice(-6)}</td>
                       <td className="px-4 py-3 text-right font-semibold text-white">रू {tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs px-2 py-0.5 rounded-full ${tx.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400' : tx.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-red-500/10 text-red-400'}`}>

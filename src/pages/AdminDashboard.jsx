@@ -14,6 +14,10 @@ export default function AdminDashboard({ user }) {
   const headers = { Authorization: `Bearer ${token}` };
 
   const getDateRange = useCallback(() => {
+    const formatLocal = (d) => {
+      const offset = d.getTimezoneOffset();
+      return new Date(d.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+    };
     const end = new Date();
     let start = new Date();
     switch (dateFilter) {
@@ -23,14 +27,14 @@ export default function AdminDashboard({ user }) {
       case 'all': start = new Date('2020-01-01'); break;
       case 'custom':
         return {
-          startDate: customStart || new Date('2020-01-01').toISOString().split('T')[0],
-          endDate: customEnd || new Date().toISOString().split('T')[0]
+          startDate: customStart || '2020-01-01',
+          endDate: customEnd || formatLocal(new Date())
         };
       default: start.setDate(end.getDate() - 7);
     }
     return {
-      startDate: start.toISOString().split('T')[0],
-      endDate: end.toISOString().split('T')[0]
+      startDate: formatLocal(start),
+      endDate: formatLocal(end)
     };
   }, [dateFilter, customStart, customEnd]);
 
@@ -77,19 +81,26 @@ export default function AdminDashboard({ user }) {
   const handleExportCSV = () => {
     if (transactions.length === 0) return;
     const csvRows = [
-      ['Date', 'Time', 'Transaction ID', 'From Account', 'To Account', 'Amount', 'Status', 'Idempotency Key'].join(',')
+      ['Date', 'Time', 'Transaction ID', 'From Name', 'From Email', 'From Mobile', 'From Account', 'To Name', 'To Email', 'To Mobile', 'To Account', 'Amount', 'Status'].join(',')
     ];
     for (const tx of transactions) {
       const d = new Date(tx.createdAt);
+      const fromAccId = typeof tx.fromAccount === 'string' ? tx.fromAccount : tx.fromAccount?._id;
+      const toAccId = typeof tx.toAccount === 'string' ? tx.toAccount : tx.toAccount?._id;
       csvRows.push([
         d.toLocaleDateString('en-IN'),
         d.toLocaleTimeString('en-IN'),
         tx._id,
-        tx.fromAccount,
-        tx.toAccount,
+        tx.fromAccount?.user?.name || '',
+        tx.fromAccount?.user?.email || '',
+        tx.fromAccount?.user?.mobile || '',
+        fromAccId || '',
+        tx.toAccount?.user?.name || '',
+        tx.toAccount?.user?.email || '',
+        tx.toAccount?.user?.mobile || '',
+        toAccId || '',
         tx.amount,
-        tx.status,
-        tx.idempotencyKey || ''
+        tx.status
       ].join(','));
     }
     const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
@@ -186,32 +197,47 @@ export default function AdminDashboard({ user }) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-700 text-left">
-                    <th className="px-4 py-3 text-slate-400 font-medium">Date & Time</th>
-                    <th className="px-4 py-3 text-slate-400 font-medium">Transaction ID</th>
-                    <th className="px-4 py-3 text-slate-400 font-medium">From</th>
-                    <th className="px-4 py-3 text-slate-400 font-medium">To</th>
-                    <th className="px-4 py-3 text-slate-400 font-medium text-right">Amount</th>
-                    <th className="px-4 py-3 text-slate-400 font-medium">Status</th>
-                    <th className="px-4 py-3 text-slate-400 font-medium text-right">Actions</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">Date & Time</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">Txn ID</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">From Name</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">From Email</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">From Mobile</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">From Account</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">To Name</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">To Email</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">To Mobile</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">To Account</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium text-right">Amount</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium">Status</th>
+                    <th className="px-3 py-3 text-slate-400 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
-                  {filteredTransactions.map(tx => (
+                  {filteredTransactions.map(tx => {
+                    const fromAccId = typeof tx.fromAccount === 'string' ? tx.fromAccount : tx.fromAccount?._id;
+                    const toAccId = typeof tx.toAccount === 'string' ? tx.toAccount : tx.toAccount?._id;
+                    return (
                     <tr key={tx._id} className="hover:bg-slate-700/30 transition-colors">
-                      <td className="px-4 py-3 text-slate-300 whitespace-nowrap">
+                      <td className="px-3 py-3 text-slate-300 whitespace-nowrap">
                         {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                         <span className="text-slate-500 ml-1 text-xs">{new Date(tx.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
                       </td>
-                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx._id?.slice(-8)}</td>
-                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.fromAccount?.slice(-6)}</td>
-                      <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.toAccount?.slice(-6)}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-white">रू {tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3 text-slate-400 font-mono text-xs">...{tx._id?.slice(-8)}</td>
+                      <td className="px-3 py-3 text-white text-sm whitespace-nowrap">{tx.fromAccount?.user?.name || '-'}</td>
+                      <td className="px-3 py-3 text-slate-400 text-xs">{tx.fromAccount?.user?.email || '-'}</td>
+                      <td className="px-3 py-3 text-slate-400 text-xs">{tx.fromAccount?.user?.mobile || '-'}</td>
+                      <td className="px-3 py-3 text-slate-500 font-mono text-xs">...{fromAccId?.slice(-6)}</td>
+                      <td className="px-3 py-3 text-white text-sm whitespace-nowrap">{tx.toAccount?.user?.name || '-'}</td>
+                      <td className="px-3 py-3 text-slate-400 text-xs">{tx.toAccount?.user?.email || '-'}</td>
+                      <td className="px-3 py-3 text-slate-400 text-xs">{tx.toAccount?.user?.mobile || '-'}</td>
+                      <td className="px-3 py-3 text-slate-500 font-mono text-xs">...{toAccId?.slice(-6)}</td>
+                      <td className="px-3 py-3 text-right font-semibold text-white whitespace-nowrap">रू {tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-3 py-3">
                         <span className={`text-xs px-2 py-0.5 rounded-full ${tx.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400' : tx.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-400' : tx.status === 'REVERSED' ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-400'}`}>
                           {tx.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-3 py-3 text-right">
                         {tx.status === 'COMPLETED' && (
                           <button 
                             onClick={() => handleRefund(tx._id)}
@@ -230,7 +256,8 @@ export default function AdminDashboard({ user }) {
                         )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

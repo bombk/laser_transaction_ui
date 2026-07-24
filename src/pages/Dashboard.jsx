@@ -25,6 +25,10 @@ export default function Dashboard({ user }) {
   const headers = { Authorization: `Bearer ${token}` };
 
   const getDateRange = useCallback(() => {
+    const formatLocal = (d) => {
+      const offset = d.getTimezoneOffset();
+      return new Date(d.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+    };
     const end = new Date();
     let start = new Date();
     switch (dateFilter) {
@@ -32,16 +36,16 @@ export default function Dashboard({ user }) {
       case '30d': start.setDate(end.getDate() - 30); break;
       case '90d': start.setDate(end.getDate() - 90); break;
       case 'all': start = new Date('2020-01-01'); break;
-      case 'custom': 
-        return { 
-          startDate: customStart || new Date('2020-01-01').toISOString().split('T')[0], 
-          endDate: customEnd || new Date().toISOString().split('T')[0] 
+      case 'custom':
+        return {
+          startDate: customStart || '2020-01-01',
+          endDate: customEnd || formatLocal(new Date())
         };
       default: start.setDate(end.getDate() - 7);
     }
     return {
-      startDate: start.toISOString().split('T')[0],
-      endDate: end.toISOString().split('T')[0]
+      startDate: formatLocal(start),
+      endDate: formatLocal(end)
     };
   }, [dateFilter, customStart, customEnd]);
 
@@ -124,10 +128,14 @@ export default function Dashboard({ user }) {
 
   const totalBalance = Object.values(balances).reduce((s, b) => s + b, 0);
 
+  const getAccId = (acc) => typeof acc === 'string' ? acc : acc?._id;
+
   const getDirection = (tx) => {
     const userAccountIds = accounts.map(a => a._id);
-    if (userAccountIds.includes(tx.fromAccount) && userAccountIds.includes(tx.toAccount)) return 'self';
-    if (userAccountIds.includes(tx.fromAccount)) return 'debit';
+    const fromId = getAccId(tx.fromAccount);
+    const toId = getAccId(tx.toAccount);
+    if (userAccountIds.includes(fromId) && userAccountIds.includes(toId)) return 'self';
+    if (userAccountIds.includes(fromId)) return 'debit';
     return 'credit';
   };
 
@@ -284,8 +292,8 @@ export default function Dashboard({ user }) {
                                 </span>
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.fromAccount?.slice(-6)}</td>
-                            <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.toAccount?.slice(-6)}</td>
+                            <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{getAccId(tx.fromAccount)?.slice(-6)}</td>
+                            <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{getAccId(tx.toAccount)?.slice(-6)}</td>
                             <td className={`px-4 py-3 text-right font-semibold ${dir === 'debit' ? 'text-red-400' : dir === 'credit' ? 'text-emerald-400' : 'text-white'}`}>
                               {dir === 'debit' ? '-' : dir === 'credit' ? '+' : ''}रू {tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </td>

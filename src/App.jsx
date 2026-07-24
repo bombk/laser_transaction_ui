@@ -9,6 +9,7 @@ import Register from './pages/Register';
 function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -27,11 +28,24 @@ function App() {
     setAuthChecked(true);
   }, []);
 
-  // While we are checking authentication, show a loading screen to avoid premature redirects
-  if (!authChecked) {
+  const handleLogout = () => {
+    setLoggingOut(true);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    setTimeout(() => {
+      setUser(null);
+      setLoggingOut(false);
+    }, 800);
+  };
+
+  // While we are checking authentication or logging out, show a loading screen
+  if (!authChecked || loggingOut) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-900 text-slate-100">
-        <p className="text-xl">Loading...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-slate-100 gap-4">
+        <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+        <p className="text-slate-400 text-sm animate-pulse">
+          {loggingOut ? 'Logging out...' : 'Loading...'}
+        </p>
       </div>
     );
   }
@@ -53,12 +67,7 @@ function App() {
             <div className="flex items-center gap-4">
               <span className="text-sm text-slate-400">Welcome, {user.name}</span>
               <button 
-                onClick={() => {
-                  localStorage.removeItem('user');
-                  localStorage.removeItem('token');
-                  setUser(null);
-                  window.location.href = '/login';
-                }}
+                onClick={handleLogout}
                 className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-sm font-medium"
               >
                 Logout
