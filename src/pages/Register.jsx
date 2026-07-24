@@ -41,7 +41,7 @@ export default function Register({ setUser }) {
       <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-2xl relative z-10">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-slate-400">Join LedgerBank today</p>
+          <p className="text-slate-400">Join BitBank today</p>
         </div>
 
         {error && (
