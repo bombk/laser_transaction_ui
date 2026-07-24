@@ -7,6 +7,7 @@ export default function SystemDashboard({ user }) {
   const [amount, setAmount] = useState(1000);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [fundMode, setFundMode] = useState('mobile'); // 'account' or 'mobile'
 
   // Create account state
   const [createUserId, setCreateUserId] = useState('');
@@ -70,7 +71,7 @@ export default function SystemDashboard({ user }) {
         { toAccount, amount, idempotencyKey },
         { headers }
       );
-      setMessage(`Successfully issued ₹${amount} to account ${toAccount}.`);
+      setMessage(`Successfully issued रू ${amount} to account ${toAccount}.`);
       setToAccount('');
       fetchAllTransactions();
     } catch (err) {
@@ -152,7 +153,7 @@ export default function SystemDashboard({ user }) {
         </div>
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
           <p className="text-slate-400 text-xs font-medium mb-1">Total Volume</p>
-          <p className="text-2xl font-bold text-white">₹{totalVolume.toLocaleString('en-IN')}</p>
+          <p className="text-2xl font-bold text-white">रू {totalVolume.toLocaleString('en-IN')}</p>
         </div>
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
           <p className="text-slate-400 text-xs font-medium mb-1">Completed</p>
@@ -173,17 +174,34 @@ export default function SystemDashboard({ user }) {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Target Account ID</label>
+              <label className="text-xs text-slate-400 mb-2 block">Send To</label>
+              <div className="flex bg-slate-900 rounded-lg p-0.5 mb-3 border border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => { setToAccount(''); setFundMode('account'); }}
+                  className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${fundMode === 'account' ? 'bg-yellow-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  Account ID
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setToAccount(''); setFundMode('mobile'); }}
+                  className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${fundMode === 'mobile' ? 'bg-yellow-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  Mobile Number
+                </button>
+              </div>
               <input
-                type="text"
-                placeholder="Paste account ID here"
+                type={fundMode === 'mobile' ? 'tel' : 'text'}
+                placeholder={fundMode === 'mobile' ? 'Enter 10-digit mobile number' : 'Paste account ID here'}
                 value={toAccount}
                 onChange={(e) => setToAccount(e.target.value)}
+                maxLength={fundMode === 'mobile' ? 10 : undefined}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white outline-none focus:border-yellow-500 transition-colors"
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Amount (₹)</label>
+              <label className="text-xs text-slate-400 mb-1 block">Amount (रू)</label>
               <input
                 type="number"
                 value={amount}
@@ -350,7 +368,7 @@ export default function SystemDashboard({ user }) {
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx._id?.slice(-8)}</td>
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.fromAccount?.slice(-6)}</td>
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.toAccount?.slice(-6)}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-white">₹{tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-white">रू {tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs px-2 py-0.5 rounded-full ${tx.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400' : tx.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-red-500/10 text-red-400'}`}>
                           {tx.status}

@@ -205,7 +205,7 @@ export default function AdminDashboard({ user }) {
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx._id?.slice(-8)}</td>
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.fromAccount?.slice(-6)}</td>
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.toAccount?.slice(-6)}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-white">₹{tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-4 py-3 text-right font-semibold text-white">रू {tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs px-2 py-0.5 rounded-full ${tx.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400' : tx.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-400' : tx.status === 'REVERSED' ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-400'}`}>
                           {tx.status}

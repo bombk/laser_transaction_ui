@@ -19,6 +19,7 @@ export default function Dashboard({ user }) {
   const [transferAmount, setTransferAmount] = useState('');
   const [transferLoading, setTransferLoading] = useState(false);
   const [transferMsg, setTransferMsg] = useState({ text: '', type: '' });
+  const [transferMode, setTransferMode] = useState('mobile'); // 'account' or 'mobile'
 
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
@@ -153,9 +154,9 @@ export default function Dashboard({ user }) {
         <div className="relative z-10">
           <p className="text-indigo-200 text-sm font-medium mb-1">Total Balance</p>
           <h2 className="text-4xl sm:text-5xl font-bold text-white mb-2">
-            {loading ? '...' : `₹${totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+            {loading ? '...' : `रू ${totalBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
           </h2>
-          <p className="text-indigo-200 text-sm">{accounts.length} account{accounts.length !== 1 ? 's' : ''} • INR</p>
+          <p className="text-indigo-200 text-sm">{accounts.length} account{accounts.length !== 1 ? 's' : ''} • NPR</p>
         </div>
       </div>
 
@@ -183,7 +184,7 @@ export default function Dashboard({ user }) {
                   </div>
                   <div className="relative z-10">
                     <p className="text-slate-400 text-sm font-medium mb-1">Account Balance</p>
-                    <h3 className="text-2xl font-bold text-white mb-3">₹{(balances[acc._id] || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
+                    <h3 className="text-2xl font-bold text-white mb-3">रू {(balances[acc._id] || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
                         <span>ID: {acc._id}</span>
@@ -286,7 +287,7 @@ export default function Dashboard({ user }) {
                             <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.fromAccount?.slice(-6)}</td>
                             <td className="px-4 py-3 text-slate-400 font-mono text-xs">...{tx.toAccount?.slice(-6)}</td>
                             <td className={`px-4 py-3 text-right font-semibold ${dir === 'debit' ? 'text-red-400' : dir === 'credit' ? 'text-emerald-400' : 'text-white'}`}>
-                              {dir === 'debit' ? '-' : dir === 'credit' ? '+' : ''}₹{tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              {dir === 'debit' ? '-' : dir === 'credit' ? '+' : ''}रू {tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="px-4 py-3">
                               <span className={`text-xs px-2 py-0.5 rounded-full ${tx.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400' : tx.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-red-500/10 text-red-400'}`}>
@@ -321,23 +322,40 @@ export default function Dashboard({ user }) {
                     className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white outline-none focus:border-indigo-500 transition-colors"
                   >
                     {accounts.map(acc => (
-                      <option key={acc._id} value={acc._id}>...{acc._id.slice(-6)} (₹{(balances[acc._id] || 0).toFixed(2)})</option>
+                      <option key={acc._id} value={acc._id}>...{acc._id.slice(-6)} (रू {(balances[acc._id] || 0).toFixed(2)})</option>
                     ))}
                   </select>
                 </div>
               )}
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">Recipient Account ID</label>
+                <label className="text-xs text-slate-400 mb-2 block">Send To</label>
+                <div className="flex bg-slate-900 rounded-lg p-0.5 mb-3 border border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => { setToAccount(''); setTransferMode('account'); }}
+                    className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${transferMode === 'account' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    Account ID
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setToAccount(''); setTransferMode('mobile'); }}
+                    className={`flex-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${transferMode === 'mobile' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    Mobile Number
+                  </button>
+                </div>
                 <input 
-                  type="text" 
+                  type={transferMode === 'mobile' ? 'tel' : 'text'}
                   value={toAccount}
                   onChange={e => setToAccount(e.target.value)}
-                  placeholder="Paste account ID" 
+                  placeholder={transferMode === 'mobile' ? 'Enter 10-digit mobile number' : 'Paste account ID'}
+                  maxLength={transferMode === 'mobile' ? 10 : undefined}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white outline-none focus:border-indigo-500 transition-colors" 
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">Amount (₹)</label>
+                <label className="text-xs text-slate-400 mb-1 block">Amount (रू)</label>
                 <input 
                   type="number" 
                   value={transferAmount}
